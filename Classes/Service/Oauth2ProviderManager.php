@@ -18,9 +18,12 @@ declare(strict_types=1);
 
 namespace Waldhacker\Oauth2Client\Service;
 
+use InvalidArgumentException;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\GenericProvider;
 use Psr\Http\Message\ServerRequestInterface;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationExtensionNotConfiguredException;
+use TYPO3\CMS\Core\Configuration\Exception\ExtensionConfigurationPathDoesNotExistException;
 use TYPO3\CMS\Core\Configuration\ExtensionConfiguration;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
@@ -30,17 +33,26 @@ class Oauth2ProviderManager
 {
     public const SCOPE_FRONTEND = 'frontend';
     public const SCOPE_BACKEND = 'backend';
+
     private SiteService $siteService;
+
+    /**
+     * @var ProviderConfiguration[]
+     */
     private array $providerConfigurations = [];
 
+    /**
+     * @throws ExtensionConfigurationPathDoesNotExistException
+     * @throws ExtensionConfigurationExtensionNotConfiguredException
+     */
     public function __construct(
         ExtensionConfiguration $extensionConfiguration,
         SiteService $siteService
     ) {
         $this->siteService = $siteService;
         $extensionConfiguration = $extensionConfiguration->get('oauth2_client');
-        if (isset($extensionConfiguration['providers'])) {
-            foreach ($extensionConfiguration['providers'] ?? [] as $identifier => $provider) {
+        if (is_array($extensionConfiguration['providers'] ?? false)) {
+            foreach ($extensionConfiguration['providers'] as $identifier => $provider) {
                 $scopes = array_filter(
                     array_map('strval', $provider['scopes'] ?? [self::SCOPE_BACKEND, self::SCOPE_FRONTEND]),
                     static function (string $value): bool {
@@ -70,7 +82,7 @@ class Oauth2ProviderManager
     public function createProvider(string $providerId, ?string $redirectUrl = null): AbstractProvider
     {
         if (!isset($this->providerConfigurations[$providerId])) {
-            throw new \InvalidArgumentException('No such provider: ' . $providerId, 1642867944);
+            throw new InvalidArgumentException('No such provider: ' . $providerId, 1642867944);
         }
         $provider = $this->providerConfigurations[$providerId];
         $options = $provider->getOptions();
@@ -138,12 +150,13 @@ class Oauth2ProviderManager
         $siteConfiguration = $site->getConfiguration();
         $languageConfiguration = $language->toArray();
         $enabledProviderIds = empty($languageConfiguration['enabled_oauth2_providers'])
-                              ? GeneralUtility::trimExplode(',', $siteConfiguration['enabled_oauth2_providers'] ?? '')
-                              : GeneralUtility::trimExplode(',', $languageConfiguration['enabled_oauth2_providers']);
+              ? GeneralUtility::trimExplode(',', $siteConfiguration['enabled_oauth2_providers'] ?? '')
+              : GeneralUtility::trimExplode(',', $languageConfiguration['enabled_oauth2_providers']);
 
         $configuredEnabledProviders = array_filter(
             $this->getConfiguredFrontendProviders() ?? [],
-            static fn (ProviderConfiguration $provider): bool => in_array($provider->getIdentifier(), $enabledProviderIds)
+            static fn (ProviderConfiguration $provider): bool
+                => in_array($provider->getIdentifier(), $enabledProviderIds)
         );
 
         if (count($configuredEnabledProviders) > 0) {

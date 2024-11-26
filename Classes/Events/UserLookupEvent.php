@@ -25,24 +25,13 @@ use League\OAuth2\Client\Provider\ResourceOwnerInterface;
  */
 final class UserLookupEvent
 {
-    private ResourceOwnerInterface $resourceOwner;
-    private ?array $userRecord;
-    private string $providerId;
-    private string $code;
-    private string $state;
-
     public function __construct(
-        string $providerId,
-        ResourceOwnerInterface $resourceOwner,
-        ?array $userRecord,
-        string $code,
-        string $state
+        private readonly string $providerId,
+        private readonly ResourceOwnerInterface $resourceOwner,
+        private ?array $userRecord,
+        private readonly string $code,
+        private readonly string $state
     ) {
-        $this->resourceOwner = $resourceOwner;
-        $this->userRecord = $userRecord;
-        $this->providerId = $providerId;
-        $this->code = $code;
-        $this->state = $state;
     }
 
     /**
@@ -51,7 +40,8 @@ final class UserLookupEvent
     public function getResourceOwner(): ResourceOwnerInterface
     {
         trigger_error(
-            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
+            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and
+             will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
             E_USER_DEPRECATED
         );
 
@@ -72,7 +62,8 @@ final class UserLookupEvent
     public function setUserRecord(array $userRow): void
     {
         trigger_error(
-            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
+            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and
+             will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
             E_USER_DEPRECATED
         );
 
@@ -85,7 +76,8 @@ final class UserLookupEvent
     public function getProviderId(): string
     {
         trigger_error(
-            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
+            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and
+             will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
             E_USER_DEPRECATED
         );
 
@@ -98,7 +90,8 @@ final class UserLookupEvent
     public function getCode(): string
     {
         trigger_error(
-            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
+            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and
+             will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
             E_USER_DEPRECATED
         );
 
@@ -111,7 +104,8 @@ final class UserLookupEvent
     public function getState(): string
     {
         trigger_error(
-            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
+            'The event `\Waldhacker\Oauth2Client\Events\UserLookupEvent` for backend user lookups is deprecated and
+             will stop working in version 3. Use the `\Waldhacker\Oauth2Client\Events\BackendUserLookupEvent` instead.',
             E_USER_DEPRECATED
         );
 

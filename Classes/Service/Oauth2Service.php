@@ -18,29 +18,31 @@ declare(strict_types=1);
 
 namespace Waldhacker\Oauth2Client\Service;
 
+use Exception;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessToken;
 use Psr\Http\Message\ServerRequestInterface;
-use Psr\Log\LoggerAwareInterface;
-use Psr\Log\LoggerAwareTrait;
+use Psr\Log\LoggerInterface;
+use TYPO3\CMS\Core\Log\LogManager;
+use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotCreatedException;
 use Waldhacker\Oauth2Client\Session\SessionManager;
 
-class Oauth2Service implements LoggerAwareInterface
+readonly class Oauth2Service
 {
-    use LoggerAwareTrait;
-
-    private Oauth2ProviderManager $oauth2ProviderManager;
-    private SessionManager $sessionManager;
+    private LoggerInterface $logger;
 
     public function __construct(
-        Oauth2ProviderManager $oauth2ProviderManager,
-        SessionManager $sessionManager
+        private Oauth2ProviderManager $oauth2ProviderManager,
+        private SessionManager $sessionManager,
+        private LogManager $logManager,
     ) {
-        $this->oauth2ProviderManager = $oauth2ProviderManager;
-        $this->sessionManager = $sessionManager;
+        $this->logger = $this->logManager->getLogger(__CLASS__);
     }
 
+    /**
+     * @throws SessionNotCreatedException
+     */
     public function buildGetResourceOwnerAuthorizationUrl(
         string $providerId,
         ?string $callbackUrl = null,
@@ -48,11 +50,18 @@ class Oauth2Service implements LoggerAwareInterface
     ): string {
         $provider = $this->oauth2ProviderManager->createProvider($providerId, $callbackUrl);
         $authorizationUrl = $provider->getAuthorizationUrl();
-        $this->sessionManager->setAndSaveSessionData(SessionManager::SESSION_NAME_STATE, $provider->getState(), $request);
+        $this->sessionManager->setAndSaveSessionData(
+            SessionManager::SESSION_NAME_STATE,
+            $provider->getState(),
+            $request
+        );
 
         return $authorizationUrl;
     }
 
+    /**
+     * @throws SessionNotCreatedException
+     */
     public function buildGetResourceOwnerProvider(
         string $state,
         string $providerId,
@@ -81,10 +90,8 @@ class Oauth2Service implements LoggerAwareInterface
             if ($accessToken instanceof AccessToken) {
                 return $accessToken;
             }
-        } catch (\Exception $e) {
-            if ($this->logger !== null) {
-                $this->logger->warning($e->getMessage());
-            }
+        } catch (Exception $e) {
+            $this->logger->warning($e->getMessage());
         }
         return null;
     }
@@ -94,10 +101,8 @@ class Oauth2Service implements LoggerAwareInterface
         $user = null;
         try {
             $user = $provider->getResourceOwner($accessToken);
-        } catch (\Exception $e) {
-            if ($this->logger !== null) {
-                $this->logger->warning($e->getMessage());
-            }
+        } catch (Exception $e) {
+            $this->logger->warning($e->getMessage());
         }
         return $user;
     }

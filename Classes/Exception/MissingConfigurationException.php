@@ -2,6 +2,8 @@
 
 namespace Waldhacker\Oauth2Client\Exception;
 
-class MissingConfigurationException extends \Exception
+use Exception;
+
+class MissingConfigurationException extends Exception
 {
 }
