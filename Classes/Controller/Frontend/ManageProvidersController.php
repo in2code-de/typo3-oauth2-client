@@ -80,10 +80,7 @@ class ManageProvidersController extends ActionController
                 $originalRequestData,
                 $serverRequest
             );
-            // @todo $psrResponse is always ResponseInterface, so how do we treat it?
-            $psrResponse = $psrResponse
-                ? $this->sessionManager->appendOAuth2CookieToResponse($psrResponse, $serverRequest)
-                : null;
+            $psrResponse = $this->sessionManager->appendOAuth2CookieToResponse($psrResponse, $serverRequest);
         }
 
         return $psrResponse;
@@ -107,8 +104,13 @@ class ManageProvidersController extends ActionController
 
     private function typo3UserIsWithinConfiguredStorage(ServerRequestInterface $request): bool
     {
-        $typo3User = $request->getAttribute('frontend.user');
-        if (!($typo3User instanceof FrontendUserAuthentication)) {
+        $frontendUser = $request->getAttribute('frontend.user');
+        if (!($frontendUser instanceof FrontendUserAuthentication)) {
+            return false;
+        }
+
+        $frontuserStoragePid = $frontendUser->user['pid'] ?? null;
+        if ($frontuserStoragePid === null) {
             return false;
         }
 
@@ -122,14 +124,9 @@ class ManageProvidersController extends ActionController
         $siteConfiguration = $site->getConfiguration();
         $languageConfiguration = $language->toArray();
         $configuredStoragePid = empty($languageConfiguration['oauth2_storage_pid'])
-                      ? ($siteConfiguration['oauth2_storage_pid'] ?? null)
-                      : $languageConfiguration['oauth2_storage_pid'];
+            ? ($siteConfiguration['oauth2_storage_pid'] ?? null)
+            : $languageConfiguration['oauth2_storage_pid'];
 
-        $typo3UserStoragePid = $typo3User->user['pid'] ?? null;
-        if ($typo3UserStoragePid === null) {
-            return false;
-        }
-
-        return (int)$typo3UserStoragePid === (int)$configuredStoragePid;
+        return (int)$frontuserStoragePid === (int)$configuredStoragePid;
     }
 }
