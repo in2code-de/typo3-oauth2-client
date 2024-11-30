@@ -21,7 +21,6 @@ return [
         'label' => 'provider',
         'tstamp' => 'tstamp',
         'crdate' => 'crdate',
-        'cruser_id' => 'cruser_id',
         'hideTable' => 1,
         'typeicon_classes' => [
             'default' => 'actions-key'
