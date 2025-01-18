@@ -138,7 +138,7 @@ class Oauth2ProviderManager
         return null;
     }
 
-    public function getEnabledFrontendProviders(ServerRequestInterface $request = null): ?array
+    public function getEnabledFrontendProviders(?ServerRequestInterface $request = null): ?array
     {
         /** @var Site|null $site */
         $site = $this->siteService->getSite($request);
@@ -179,7 +179,7 @@ class Oauth2ProviderManager
         return $providers && isset($providers[$providerId]);
     }
 
-    public function hasFrontendProvider(string $providerId, ServerRequestInterface $request = null): bool
+    public function hasFrontendProvider(string $providerId, ?ServerRequestInterface $request = null): bool
     {
         $providers = $this->getEnabledFrontendProviders($request);
         return $providers && isset($providers[$providerId]);

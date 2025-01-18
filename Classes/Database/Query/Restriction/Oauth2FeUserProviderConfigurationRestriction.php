@@ -41,7 +41,7 @@ class Oauth2FeUserProviderConfigurationRestriction implements QueryRestriction, 
     /**
      * @throws AspectNotFoundException
      */
-    public function __construct(Context $context = null)
+    public function __construct(?Context $context = null)
     {
         /** @var Context $context */
         $context = $context ?? GeneralUtility::makeInstance(Context::class);
