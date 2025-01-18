@@ -54,7 +54,7 @@ class SessionManager
         self::REQUEST_TYPE_BE => null
     ];
 
-    public function getSessionData(string $key, ServerRequestInterface $request = null): mixed
+    public function getSessionData(string $key, ?ServerRequestInterface $request = null): mixed
     {
         $request = $this->getRequest($request);
         $requestType = $this->determineRequestType($request);
@@ -64,7 +64,7 @@ class SessionManager
     /**
      * @throws SessionNotCreatedException
      */
-    public function setAndSaveSessionData(string $key, mixed $data, ServerRequestInterface $request = null): void
+    public function setAndSaveSessionData(string $key, mixed $data, ?ServerRequestInterface $request = null): void
     {
         $request = $this->getRequest($request);
         $requestType = $this->determineRequestType($request);
@@ -78,7 +78,7 @@ class SessionManager
         }
     }
 
-    public function removeSessionData(ServerRequestInterface $request = null): void
+    public function removeSessionData(?ServerRequestInterface $request = null): void
     {
         $request = $this->getRequest($request);
         $requestType = $this->determineRequestType($request);
@@ -91,14 +91,14 @@ class SessionManager
 
     public function appendOAuth2CookieToResponse(
         ResponseInterface $response,
-        ServerRequestInterface $request = null
+        ?ServerRequestInterface $request = null
     ): ResponseInterface {
         return $response->withAddedHeader('Set-Cookie', (string)$this->buildOAuth2Cookie($request));
     }
 
     public function appendRemoveOAuth2CookieToResponse(
         ResponseInterface $response,
-        ServerRequestInterface $request = null
+        ?ServerRequestInterface $request = null
     ): ResponseInterface {
         $request = $this->getRequest($request);
         $requestType = $this->determineRequestType($request);
@@ -121,7 +121,7 @@ class SessionManager
         return $response->withAddedHeader('Set-Cookie', (string)$cookie);
     }
 
-    public function getOAuth2CookieName(ServerRequestInterface $request = null): string
+    public function getOAuth2CookieName(?ServerRequestInterface $request = null): string
     {
         $request = $this->getRequest($request);
         $requestType = $this->determineRequestType($request);
@@ -159,7 +159,7 @@ class SessionManager
         return UserSessionManager::create($requestType);
     }
 
-    private function buildOAuth2Cookie(ServerRequestInterface $request = null): Cookie
+    private function buildOAuth2Cookie(?ServerRequestInterface $request = null): Cookie
     {
         $request = $this->getRequest($request);
         $requestType = $this->determineRequestType($request);
@@ -232,7 +232,7 @@ class SessionManager
         return ApplicationType::fromRequest($request)->isFrontend();
     }
 
-    private function getRequest(ServerRequestInterface $request = null): ServerRequestInterface
+    private function getRequest(?ServerRequestInterface $request = null): ServerRequestInterface
     {
         $request = $request ?? $GLOBALS['TYPO3_REQUEST'] ?? ServerRequestFactory::fromGlobals();
         if (!($request instanceof ServerRequestInterface)) {

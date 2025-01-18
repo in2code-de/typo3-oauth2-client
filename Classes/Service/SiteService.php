@@ -30,19 +30,19 @@ class SiteService
 {
     public const CALLBACK_SLUG = '_oauth2';
 
-    public function getSite(ServerRequestInterface $request = null): ?SiteInterface
+    public function getSite(?ServerRequestInterface $request = null): ?SiteInterface
     {
         $request = $this->getRequest($request);
         return $request->getAttribute('site');
     }
 
-    public function getLanguage(ServerRequestInterface $request = null): ?SiteLanguage
+    public function getLanguage(?ServerRequestInterface $request = null): ?SiteLanguage
     {
         $request = $this->getRequest($request);
         return $request->getAttribute('language');
     }
 
-    public function buildCallbackUri(array $queryParameters, ServerRequestInterface $request = null): string
+    public function buildCallbackUri(array $queryParameters, ?ServerRequestInterface $request = null): string
     {
         return sprintf(
             '%s?%s',
@@ -51,14 +51,14 @@ class SiteService
         );
     }
 
-    public function doesTheRemoteInstanceCallUsBack(ServerRequestInterface $request = null): bool
+    public function doesTheRemoteInstanceCallUsBack(?ServerRequestInterface $request = null): bool
     {
         $request = $this->getRequest($request);
         $callbackUri = new Uri($this->buildCallbackBaseUri($request));
         return trim($request->getUri()->getPath(), '/') === trim($callbackUri->getPath(), '/');
     }
 
-    public function getBaseUri(ServerRequestInterface $request = null): string
+    public function getBaseUri(?ServerRequestInterface $request = null): string
     {
         $request = $this->getRequest($request);
 
@@ -71,7 +71,7 @@ class SiteService
         return rtrim($base, '/');
     }
 
-    private function buildCallbackBaseUri(ServerRequestInterface $request = null): string
+    private function buildCallbackBaseUri(?ServerRequestInterface $request = null): string
     {
         return sprintf(
             '%s/%s',
@@ -80,7 +80,7 @@ class SiteService
         );
     }
 
-    private function buildCallbackSlug(ServerRequestInterface $request = null): string
+    private function buildCallbackSlug(?ServerRequestInterface $request = null): string
     {
         /** @var Site|null $site */
         $site = $this->getSite($request);
@@ -99,7 +99,7 @@ class SiteService
         return empty($callbackSlug) ? self::CALLBACK_SLUG : $callbackSlug;
     }
 
-    private function getRequest(ServerRequestInterface $request = null): ServerRequestInterface
+    private function getRequest(?ServerRequestInterface $request = null): ServerRequestInterface
     {
         $request = $request ?? $GLOBALS['TYPO3_REQUEST'] ?? ServerRequestFactory::fromGlobals();
         if (!($request instanceof ServerRequestInterface)) {

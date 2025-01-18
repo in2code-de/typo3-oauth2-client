@@ -46,7 +46,7 @@ readonly class Oauth2Service
     public function buildGetResourceOwnerAuthorizationUrl(
         string $providerId,
         ?string $callbackUrl = null,
-        ServerRequestInterface $request = null
+        ?ServerRequestInterface $request = null
     ): string {
         $provider = $this->oauth2ProviderManager->createProvider($providerId, $callbackUrl);
         $authorizationUrl = $provider->getAuthorizationUrl();
@@ -66,7 +66,7 @@ readonly class Oauth2Service
         string $state,
         string $providerId,
         ?string $callbackUrl = null,
-        ServerRequestInterface $request = null
+        ?ServerRequestInterface $request = null
     ): ?AbstractProvider {
         $oauth2StateFromSession = $this->sessionManager->getSessionData(SessionManager::SESSION_NAME_STATE, $request);
 
