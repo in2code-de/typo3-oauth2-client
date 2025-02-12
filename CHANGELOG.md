@@ -1,6 +1,13 @@
 # Changelog
 
 
+## 3.0.0 (2025-02-12)
+
+### Tasks
+
+* TYPO3 v12 compatibility [Ralf Zimmermann, Maik Schneider]
+
+
 ## 2.1.1 (2023-03-04)
 
 ### Tasks
@@ -213,5 +220,3 @@
   [SECURITY] Restrict read/write access to tx_oauth2_client_configs
 
   See merge request waldhacker/typo3/oauth2-client!1
-
-
