@@ -24,6 +24,7 @@ use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\UserAspect;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\Information\Typo3Version;
+use TYPO3\CMS\Core\Session\UserSessionManager;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 
@@ -62,8 +63,11 @@ class FrontendUserHandler implements MiddlewareInterface
         if (is_array($frontendUser)) {
             $context = GeneralUtility::makeInstance(Context::class);
             $frontendUserAuthentication->createUserSession($frontendUser);
-            $frontendUserAuthentication->user = $frontendUserAuthentication->fetchUserSession();
-            // v11+
+            $userSessionManager = UserSessionManager::create('FE');
+            $frontendUserAuthentication->user = $userSessionManager->createFromRequestOrAnonymous(
+                $request,
+                FrontendUserAuthentication::getCookieName()
+            );
             if (method_exists($frontendUserAuthentication, 'createUserAspect')) {
                 $frontendUserAuthentication->fetchGroupData($request);
                 $userAspect = $frontendUserAuthentication->createUserAspect();

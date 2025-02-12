@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace Waldhacker\Oauth2Client\Controller\Frontend;
 
+use Doctrine\DBAL\Exception;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use Psr\Http\Message\ResponseFactoryInterface;
 use Psr\Http\Message\ResponseInterface;
@@ -25,6 +26,9 @@ use Psr\Http\Message\ServerRequestInterface;
 use Psr\Log\LoggerAwareInterface;
 use Psr\Log\LoggerAwareTrait;
 use TYPO3\CMS\Core\Context\Context;
+use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
+use TYPO3\CMS\Core\Context\UserAspect;
+use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotCreatedException;
 use TYPO3\CMS\Core\Site\Entity\Site;
 use TYPO3\CMS\Frontend\Authentication\FrontendUserAuthentication;
 use Waldhacker\Oauth2Client\Repository\FrontendUserRepository;
@@ -42,41 +46,32 @@ class RegistrationController implements LoggerAwareInterface
         'verify',
     ];
 
-    private Oauth2Service $oauth2Service;
-    private Oauth2ProviderManager $oauth2ProviderManager;
-    private FrontendUserRepository $frontendUserRepository;
-    private SessionManager $sessionManager;
-    private SiteService $siteService;
-    private ResponseFactoryInterface $responseFactory;
-    private Context $context;
-
     public function __construct(
-        Oauth2Service $oauth2Service,
-        Oauth2ProviderManager $oauth2ProviderManager,
-        FrontendUserRepository $frontendUserRepository,
-        SessionManager $sessionManager,
-        SiteService $siteService,
-        ResponseFactoryInterface $responseFactory,
-        Context $context
+        private readonly Oauth2Service $oauth2Service,
+        private readonly Oauth2ProviderManager $oauth2ProviderManager,
+        private readonly FrontendUserRepository $frontendUserRepository,
+        private readonly SessionManager $sessionManager,
+        private readonly SiteService $siteService,
+        private readonly ResponseFactoryInterface $responseFactory,
+        private readonly Context $context
     ) {
-        $this->oauth2Service = $oauth2Service;
-        $this->oauth2ProviderManager = $oauth2ProviderManager;
-        $this->frontendUserRepository = $frontendUserRepository;
-        $this->sessionManager = $sessionManager;
-        $this->siteService = $siteService;
-        $this->responseFactory = $responseFactory;
-        $this->context = $context;
     }
 
+    /**
+     * @throws SessionNotCreatedException
+     * @throws AspectNotFoundException
+     */
     public function handleRequest(ServerRequestInterface $request): ResponseInterface
     {
         $getParameters = $request->getQueryParams();
 
         $action = $getParameters['tx_oauth2client']['action'] ?? null;
         $providerId = (string)($getParameters['oauth2-provider'] ?? '');
+        /** @var UserAspect $frontendUser */
+        $frontendUser = $this->context->getAspect('frontend.user');
 
         if (
-            !$this->context->getAspect('frontend.user')->isLoggedIn()
+            !$frontendUser->isLoggedIn()
             || empty($providerId)
             || !$this->oauth2ProviderManager->hasFrontendProvider($providerId, $request)
             || !in_array($action, self::$allowedActions, true)
@@ -95,6 +90,9 @@ class RegistrationController implements LoggerAwareInterface
         return $this->authorize($providerId, $request);
     }
 
+    /**
+     * @throws SessionNotCreatedException
+     */
     private function authorize(string $providerId, ServerRequestInterface $request): ResponseInterface
     {
         $authorizationUrl = $this->oauth2Service->buildGetResourceOwnerAuthorizationUrl(
@@ -107,10 +105,22 @@ class RegistrationController implements LoggerAwareInterface
         return $this->sessionManager->appendOAuth2CookieToResponse($response, $request);
     }
 
-    private function verify(string $providerId, string $code, string $state, ServerRequestInterface $request): ResponseInterface
-    {
-        $originalRequestData = $this->sessionManager->getSessionData(SessionManager::SESSION_NAME_ORIGINAL_REQUEST, $request);
-        $warningRedirectUri = empty($originalRequestData) ? $this->siteService->getBaseUri() : $originalRequestData['uri'];
+    /**
+     * @throws SessionNotCreatedException
+     */
+    private function verify(
+        string $providerId,
+        string $code,
+        string $state,
+        ServerRequestInterface $request
+    ): ResponseInterface {
+        $originalRequestData = $this->sessionManager->getSessionData(
+            SessionManager::SESSION_NAME_ORIGINAL_REQUEST,
+            $request
+        );
+        $warningRedirectUri = empty($originalRequestData)
+            ? $this->siteService->getBaseUri()
+            : $originalRequestData['uri'];
         if (empty($code) || empty($state)) {
             return $this->redirectWithWarning($warningRedirectUri, $request);
         }
@@ -140,7 +150,7 @@ class RegistrationController implements LoggerAwareInterface
         if ($remoteUser instanceof ResourceOwnerInterface) {
             try {
                 $this->frontendUserRepository->persistIdentityForUser($providerId, (string)$remoteUser->getId());
-            } catch (\Exception $e) {
+            } catch (Exception | AspectNotFoundException) {
                 return $this->redirectWithWarning($warningRedirectUri, $request);
             }
         } else {

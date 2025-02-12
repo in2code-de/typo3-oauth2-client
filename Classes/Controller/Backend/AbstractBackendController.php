@@ -18,6 +18,7 @@ declare(strict_types=1);
 
 namespace Waldhacker\Oauth2Client\Controller\Backend;
 
+use TYPO3\CMS\Core\Exception;
 use TYPO3\CMS\Core\Localization\LanguageService;
 use TYPO3\CMS\Core\Messaging\FlashMessage;
 use TYPO3\CMS\Core\Messaging\FlashMessageService;
@@ -26,9 +27,17 @@ use TYPO3\CMS\Core\Utility\GeneralUtility;
 
 class AbstractBackendController
 {
-    protected function addFlashMessage(string $message, string $title = '', ContextualFeedbackSeverity $severity = ContextualFeedbackSeverity::INFO): void
-    {
-        GeneralUtility::makeInstance(FlashMessageService::class)->getMessageQueueByIdentifier()->enqueue(
+    /**
+     * @throws Exception
+     */
+    protected function addFlashMessage(
+        string $message,
+        string $title = '',
+        ContextualFeedbackSeverity $severity = ContextualFeedbackSeverity::INFO
+    ): void {
+        /** @var FlashMessageService $flashMessageService */
+        $flashMessageService = GeneralUtility::makeInstance(FlashMessageService::class);
+        $flashMessageService->getMessageQueueByIdentifier()->enqueue(
             GeneralUtility::makeInstance(FlashMessage::class, $message, $title, $severity, true)
         );
     }
