@@ -18,17 +18,22 @@ declare(strict_types=1);
 
 namespace Waldhacker\Oauth2Client\Updates;
 
+use Generator;
+use Doctrine\DBAL\Exception;
+use Doctrine\DBAL\ParameterType;
 use Symfony\Component\Console\Output\OutputInterface;
 use TYPO3\CMS\Core\Database\ConnectionPool;
+use TYPO3\CMS\Install\Attribute\UpgradeWizard;
 use TYPO3\CMS\Install\Updates\ChattyInterface;
 use TYPO3\CMS\Install\Updates\DatabaseUpdatedPrerequisite;
 use TYPO3\CMS\Install\Updates\UpgradeWizardInterface;
 use Waldhacker\Oauth2Client\Database\Query\Restriction\Oauth2BeUserProviderConfigurationRestriction;
 
+#[UpgradeWizard('oauth2_client_RenameClientConfigsTableUpdateWizard20220122130120')]
 class RenameClientConfigsTableUpdateWizard20220122130120 implements UpgradeWizardInterface, ChattyInterface
 {
     private const OAUTH2_BE_CONFIG_TABLE = 'tx_oauth2_beuser_provider_configuration';
-    const OAUTH2_LEGACY_CONFIG_TABLE = 'tx_oauth2_client_configs';
+    public const OAUTH2_LEGACY_CONFIG_TABLE = 'tx_oauth2_client_configs';
     private ConnectionPool $connectionPool;
     private OutputInterface $output;
 
@@ -57,13 +62,16 @@ class RenameClientConfigsTableUpdateWizard20220122130120 implements UpgradeWizar
         return 'Migrate OAuth2 table tx_oauth2_client_configs to tx_oauth2_beuser_provider_configuration';
     }
 
+    /**
+     * @throws Exception
+     */
     public function executeUpdate(): bool
     {
         $errorExists = false;
         $connection = $this->connectionPool->getConnectionForTable(self::OAUTH2_BE_CONFIG_TABLE);
         foreach ($this->findAllFromLegacyTable() as $row) {
             $connection->insert(self::OAUTH2_BE_CONFIG_TABLE, $row);
-            $lastInsertId = (int)$connection->lastInsertId(self::OAUTH2_BE_CONFIG_TABLE);
+            $lastInsertId = (int)$connection->lastInsertId();
             if ($lastInsertId === (int)$row['uid']) {
                 $this->output->writeln(sprintf('Record with uid %s was migrated', $row['uid']));
                 $deletions = $connection->delete(self::OAUTH2_LEGACY_CONFIG_TABLE, ['uid' => (int)$row['uid']]);
@@ -81,9 +89,13 @@ class RenameClientConfigsTableUpdateWizard20220122130120 implements UpgradeWizar
         return !$errorExists;
     }
 
+    /**
+     * @throws Exception
+     */
     public function updateNecessary(): bool
     {
-        return $this->tableExists(self::OAUTH2_LEGACY_CONFIG_TABLE) && $this->tableIsEmpty(self::OAUTH2_BE_CONFIG_TABLE);
+        return $this->tableExists(self::OAUTH2_LEGACY_CONFIG_TABLE)
+            && $this->tableIsEmpty(self::OAUTH2_BE_CONFIG_TABLE);
     }
 
     public function getPrerequisites(): array
@@ -93,7 +105,10 @@ class RenameClientConfigsTableUpdateWizard20220122130120 implements UpgradeWizar
         ];
     }
 
-    private function findAllFromLegacyTable(): \Generator
+    /**
+     * @throws Exception
+     */
+    private function findAllFromLegacyTable(): Generator
     {
         $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_LEGACY_CONFIG_TABLE);
         $qb->getRestrictions()->removeByType(Oauth2BeUserProviderConfigurationRestriction::class);
@@ -103,7 +118,7 @@ class RenameClientConfigsTableUpdateWizard20220122130120 implements UpgradeWizar
             ->from(self::OAUTH2_LEGACY_CONFIG_TABLE)
             ->where(
                 $qb->expr()->and(
-                    $qb->expr()->eq('deleted', $qb->createNamedParameter(0, \PDO::PARAM_INT))
+                    $qb->expr()->eq('deleted', $qb->createNamedParameter(0, ParameterType::INTEGER))
                 )
             )
             ->executeQuery();
@@ -113,18 +128,20 @@ class RenameClientConfigsTableUpdateWizard20220122130120 implements UpgradeWizar
                 yield $row;
             }
         }
-
-        return;
     }
 
+    /**
+     * @throws Exception
+     */
     private function tableExists(string $tableName): bool
     {
-        return $this->connectionPool
-            ->getConnectionForTable($tableName)
-            ->getSchemaManager()
-            ->tablesExist([$tableName]);
+        $schemaManager = $this->connectionPool->getConnectionForTable($tableName)->createSchemaManager();
+        return $schemaManager->tablesExist([$tableName]);
     }
 
+    /**
+     * @throws Exception
+     */
     private function tableIsEmpty(string $tableName): bool
     {
         $qb = $this->connectionPool->getQueryBuilderForTable($tableName);

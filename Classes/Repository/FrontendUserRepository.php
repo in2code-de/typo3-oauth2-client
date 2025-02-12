@@ -18,34 +18,38 @@ declare(strict_types=1);
 
 namespace Waldhacker\Oauth2Client\Repository;
 
-use Doctrine\DBAL\FetchMode;
+use DateTime;
+use Doctrine\DBAL\ArrayParameterType;
+use Doctrine\DBAL\Exception;
+use Doctrine\DBAL\ParameterType;
+use InvalidArgumentException;
 use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Database\Connection;
+use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
 use TYPO3\CMS\Core\Database\ConnectionPool;
-use TYPO3\CMS\Core\Utility\VersionNumberUtility;
 use Waldhacker\Oauth2Client\Backend\DataHandling\DataHandlerHook;
 use Waldhacker\Oauth2Client\Database\Query\Restriction\Oauth2FeUserProviderConfigurationRestriction;
 
-class FrontendUserRepository
+readonly class FrontendUserRepository
 {
     private const OAUTH2_FE_CONFIG_TABLE = 'tx_oauth2_feuser_provider_configuration';
-    private Context $context;
-    private ConnectionPool $connectionPool;
 
     public function __construct(
-        Context $context,
-        ConnectionPool $connectionPool
+        private Context $context,
+        private ConnectionPool $connectionPool
     ) {
-        $this->context = $context;
-        $this->connectionPool = $connectionPool;
     }
 
+    /**
+     * @throws Exception
+     */
     public function getUserByIdentity(string $provider, string $identifier, int $storagePid): ?array
     {
         if ($provider === DataHandlerHook::INVALID_TOKEN || $identifier === DataHandlerHook::INVALID_TOKEN) {
             return null;
         }
-        $userWithEditRightsColumn = $GLOBALS['TCA'][self::OAUTH2_FE_CONFIG_TABLE]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
+        $userWithEditRightsColumn = $GLOBALS['TCA'][
+            self::OAUTH2_FE_CONFIG_TABLE
+        ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
 
         $qb = $this->connectionPool->getQueryBuilderForTable('fe_users');
         $qb->getRestrictions()->removeByType(Oauth2FeUserProviderConfigurationRestriction::class);
@@ -54,11 +58,11 @@ class FrontendUserRepository
             ->join('config', 'fe_users', 'fe_users', 'config.' . $userWithEditRightsColumn . '=fe_users.uid')
             ->where(
                 $qb->expr()->and(
-                    $qb->expr()->eq('identifier', $qb->createNamedParameter($identifier, \PDO::PARAM_STR)),
-                    $qb->expr()->eq('provider', $qb->createNamedParameter($provider, \PDO::PARAM_STR)),
-                    $qb->expr()->neq('identifier', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN, \PDO::PARAM_STR)),
-                    $qb->expr()->neq('provider', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN, \PDO::PARAM_STR)),
-                    $qb->expr()->eq('fe_users.pid', $qb->createNamedParameter($storagePid, \PDO::PARAM_INT))
+                    $qb->expr()->eq('identifier', $qb->createNamedParameter($identifier)),
+                    $qb->expr()->eq('provider', $qb->createNamedParameter($provider)),
+                    $qb->expr()->neq('identifier', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN)),
+                    $qb->expr()->neq('provider', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN)),
+                    $qb->expr()->eq('fe_users.pid', $qb->createNamedParameter($storagePid, ParameterType::INTEGER))
                 )
             )
             ->executeQuery();
@@ -70,27 +74,42 @@ class FrontendUserRepository
         return empty($result) || empty($result[0]) || count($result) > 1 ? null : $result[0];
     }
 
+    /**
+     * @throws AspectNotFoundException
+     * @throws Exception
+     */
     public function persistIdentityForUser(string $provider, string $identifier): void
     {
         if (empty($provider)) {
-            throw new \InvalidArgumentException('"provider" must not be empty', 1642867960);
+            throw new InvalidArgumentException('"provider" must not be empty', 1642867960);
         }
         if (empty($identifier)) {
-            throw new \InvalidArgumentException('"identifier" must not be empty', 1642867961);
+            throw new InvalidArgumentException('"identifier" must not be empty', 1642867961);
         }
 
-        $now = new \DateTime();
-        $userWithEditRightsColumn = $GLOBALS['TCA'][self::OAUTH2_FE_CONFIG_TABLE]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
+        $now = new DateTime();
+        $userWithEditRightsColumn = $GLOBALS['TCA'][
+            self::OAUTH2_FE_CONFIG_TABLE
+        ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
         $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
-        $activeConfigurationUids = array_map('intval', array_column($this->getConfigurationsByIdentity($provider, $identifier), 'uid'));
+        $activeConfigurationUids = array_map(
+            'intval',
+            array_column($this->getConfigurationsByIdentity($provider, $identifier), 'uid')
+        );
         if (!empty($activeConfigurationUids)) {
             $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_FE_CONFIG_TABLE);
             $qb->delete(self::OAUTH2_FE_CONFIG_TABLE)
                 ->where(
                     $qb->expr()->and(
-                        $qb->expr()->eq($userWithEditRightsColumn, $qb->createNamedParameter($userid, \PDO::PARAM_INT)),
-                        $qb->expr()->in('uid', $qb->createNamedParameter($activeConfigurationUids, Connection::PARAM_INT_ARRAY))
+                        $qb->expr()->eq(
+                            $userWithEditRightsColumn,
+                            $qb->createNamedParameter($userid, ParameterType::INTEGER)
+                        ),
+                        $qb->expr()->in(
+                            'uid',
+                            $qb->createNamedParameter($activeConfigurationUids, ArrayParameterType::INTEGER)
+                        )
                     )
                 )
                 ->executeStatement();
@@ -113,15 +132,21 @@ class FrontendUserRepository
             ->set('tx_oauth2_client_configs', count($activeProviders))
             ->where(
                 $qb->expr()->and(
-                    $qb->expr()->eq('uid', $qb->createNamedParameter($userid, \PDO::PARAM_INT))
+                    $qb->expr()->eq('uid', $qb->createNamedParameter($userid, ParameterType::INTEGER))
                 )
             )
             ->executeQuery();
     }
 
+    /**
+     * @throws AspectNotFoundException
+     * @throws Exception
+     */
     public function getActiveProviders(): array
     {
-        $userWithEditRightsColumn = $GLOBALS['TCA'][self::OAUTH2_FE_CONFIG_TABLE]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
+        $userWithEditRightsColumn = $GLOBALS['TCA'][
+            self::OAUTH2_FE_CONFIG_TABLE
+        ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
         $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable('fe_users');
@@ -130,9 +155,9 @@ class FrontendUserRepository
             ->join('config', 'fe_users', 'fe_users', 'config.' . $userWithEditRightsColumn . '=fe_users.uid')
             ->where(
                 $qb->expr()->and(
-                    $qb->expr()->eq('fe_users.uid', $qb->createNamedParameter($userid, \PDO::PARAM_INT)),
-                    $qb->expr()->neq('config.identifier', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN, \PDO::PARAM_STR)),
-                    $qb->expr()->neq('config.provider', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN, \PDO::PARAM_STR))
+                    $qb->expr()->eq('fe_users.uid', $qb->createNamedParameter($userid, ParameterType::INTEGER)),
+                    $qb->expr()->neq('config.identifier', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN)),
+                    $qb->expr()->neq('config.provider', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN))
                 )
             )
             ->executeQuery();
@@ -140,9 +165,13 @@ class FrontendUserRepository
         $result = $result->fetchAllAssociative();
 
         $keys = array_column($result, 'provider');
-        return (array)array_combine($keys, $result);
+        return array_combine($keys, $result);
     }
 
+    /**
+     * @throws AspectNotFoundException
+     * @throws Exception
+     */
     public function deactivateProviderByUid(int $providerUid): void
     {
         $activeProviders = $this->getActiveProviders();
@@ -150,15 +179,20 @@ class FrontendUserRepository
             return;
         }
 
-        $userWithEditRightsColumn = $GLOBALS['TCA'][self::OAUTH2_FE_CONFIG_TABLE]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
+        $userWithEditRightsColumn = $GLOBALS['TCA'][
+            self::OAUTH2_FE_CONFIG_TABLE
+        ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
         $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_FE_CONFIG_TABLE);
         $qb->delete(self::OAUTH2_FE_CONFIG_TABLE)
             ->where(
                 $qb->expr()->and(
-                    $qb->expr()->eq($userWithEditRightsColumn, $qb->createNamedParameter($userid, \PDO::PARAM_INT)),
-                    $qb->expr()->eq('uid', $qb->createNamedParameter($providerUid, \PDO::PARAM_INT))
+                    $qb->expr()->eq(
+                        $userWithEditRightsColumn,
+                        $qb->createNamedParameter($userid, ParameterType::INTEGER)
+                    ),
+                    $qb->expr()->eq('uid', $qb->createNamedParameter($providerUid, ParameterType::INTEGER))
                 )
             )
             ->executeStatement();
@@ -168,15 +202,21 @@ class FrontendUserRepository
             ->set('tx_oauth2_client_configs', count($activeProviders) - 1)
             ->where(
                 $qb->expr()->and(
-                    $qb->expr()->eq('uid', $qb->createNamedParameter($userid, \PDO::PARAM_INT))
+                    $qb->expr()->eq('uid', $qb->createNamedParameter($userid, ParameterType::INTEGER))
                 )
             )
             ->executeStatement();
     }
 
+    /**
+     * @throws AspectNotFoundException
+     * @throws Exception
+     */
     private function getConfigurationsByIdentity(string $provider, string $identifier): array
     {
-        $userWithEditRightsColumn = $GLOBALS['TCA'][self::OAUTH2_FE_CONFIG_TABLE]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
+        $userWithEditRightsColumn = $GLOBALS['TCA'][
+            self::OAUTH2_FE_CONFIG_TABLE
+        ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
         $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_FE_CONFIG_TABLE);
@@ -185,17 +225,18 @@ class FrontendUserRepository
             ->from(self::OAUTH2_FE_CONFIG_TABLE)
             ->where(
                 $qb->expr()->and(
-                    $qb->expr()->eq('identifier', $qb->createNamedParameter($identifier, \PDO::PARAM_STR)),
-                    $qb->expr()->eq('provider', $qb->createNamedParameter($provider, \PDO::PARAM_STR)),
-                    $qb->expr()->neq('identifier', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN, \PDO::PARAM_STR)),
-                    $qb->expr()->neq('provider', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN, \PDO::PARAM_STR)),
-                    $qb->expr()->eq($userWithEditRightsColumn, $qb->createNamedParameter($userid, \PDO::PARAM_INT))
+                    $qb->expr()->eq('identifier', $qb->createNamedParameter($identifier)),
+                    $qb->expr()->eq('provider', $qb->createNamedParameter($provider)),
+                    $qb->expr()->neq('identifier', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN)),
+                    $qb->expr()->neq('provider', $qb->createNamedParameter(DataHandlerHook::INVALID_TOKEN)),
+                    $qb->expr()->eq(
+                        $userWithEditRightsColumn,
+                        $qb->createNamedParameter($userid, ParameterType::INTEGER)
+                    )
                 )
             )
             ->executeQuery();
 
-        $result = $result->fetchAllAssociative();
-
-        return $result;
+        return $result->fetchAllAssociative();
     }
 }
