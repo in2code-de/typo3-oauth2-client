@@ -1,5 +1,3 @@
-[![ci](https://github.com/waldhacker/ext-oauth2-client/actions/workflows/ci.yml/badge.svg)](https://github.com/waldhacker/ext-oauth2-client/actions/workflows/ci.yml)
-
 # TYPO3 OAuth2 login client (backend and frontend)
 
 Allow your frontend and backend users to add login possibilities via any OAuth2 provider. Popular examples are Github or Gitlab, Google, Facebook or LinkedIn or classically self-hosted solutions like Keycloak.
