@@ -187,7 +187,8 @@ class BackendAuthenticationService extends AbstractAuthenticationService
             $provider,
             $accessToken,
             $this->remoteUser,
-            $typo3User
+            $typo3User,
+            $request
         ));
         $typo3User = $userLookupEvent->getTypo3User();
 

@@ -21,6 +21,7 @@ namespace Waldhacker\Oauth2Client\Events;
 use League\OAuth2\Client\Provider\AbstractProvider;
 use League\OAuth2\Client\Provider\ResourceOwnerInterface;
 use League\OAuth2\Client\Token\AccessTokenInterface;
+use Psr\Http\Message\ServerRequestInterface;
 
 final class BackendUserLookupEvent
 {
@@ -29,7 +30,8 @@ final class BackendUserLookupEvent
         private readonly AbstractProvider $provider,
         private readonly AccessTokenInterface $accessToken,
         private readonly ResourceOwnerInterface $remoteUser,
-        private ?array $typo3User
+        private ?array $typo3User,
+        private ServerRequestInterface $request
     ) {
     }
 
@@ -61,5 +63,10 @@ final class BackendUserLookupEvent
     public function setTypo3User(array $typo3User): void
     {
         $this->typo3User = $typo3User;
+    }
+
+    public function getRequest(): ServerRequestInterface
+    {
+        return $this->request;
     }
 }
