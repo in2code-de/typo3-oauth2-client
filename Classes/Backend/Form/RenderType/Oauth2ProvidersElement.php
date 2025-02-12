@@ -43,7 +43,7 @@ class Oauth2ProvidersElement extends AbstractFormElement
         private readonly Oauth2ProviderManager $oauth2ProviderManager,
         array $data = [],
     ) {
-        if (is_callable('parent::__construct')) {
+        if (is_callable(parent::class . '::__construct')) {
             // @todo remove once TYPO3 v12 compatibility is dropped
             parent::__construct($NodeFactory, $data);
         }
