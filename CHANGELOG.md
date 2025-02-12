@@ -1,6 +1,13 @@
 # Changelog
 
 
+## 4.0.0 (2025-02-12)
+
+### Tasks
+
+* TYPO3 v13 compatibility [Sebastian Fischer, Oliver Eglseder]
+
+
 ## 3.0.0 (2025-02-12)
 
 ### Tasks
