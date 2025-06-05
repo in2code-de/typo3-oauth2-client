@@ -90,7 +90,7 @@ class ManageProvidersController extends ActionController
      * @throws AspectNotFoundException
      * @throws Exception
      */
-    public function deactivateAction(int $providerId): void
+    public function deactivateAction(int $providerId): ResponseInterface
     {
         /** @var UserAspect $frontendUser */
         $frontendUser = $this->context->getAspect('frontend.user');
@@ -99,7 +99,7 @@ class ManageProvidersController extends ActionController
             $this->frontendUserRepository->deactivateProviderByUid($providerId);
         }
 
-        $this->redirect('list');
+        return $this->redirect('list');
     }
 
     private function typo3UserIsWithinConfiguredStorage(ServerRequestInterface $request): bool
