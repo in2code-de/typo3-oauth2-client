@@ -28,13 +28,13 @@ use TYPO3\CMS\Core\Localization\LanguageService;
 use Waldhacker\Oauth2Client\Repository\BackendUserRepository;
 use Waldhacker\Oauth2Client\Service\Oauth2ProviderManager;
 
-readonly class ManageProvidersButtonRenderer
+class ManageProvidersButtonRenderer
 {
     public function __construct(
-        private UriBuilder $uriBuilder,
-        private BackendUserRepository $backendUserRepository,
-        private Oauth2ProviderManager $oauth2ProviderManager,
-        private IconFactory $iconFactory,
+        private readonly UriBuilder $uriBuilder,
+        private readonly BackendUserRepository $backendUserRepository,
+        private readonly Oauth2ProviderManager $oauth2ProviderManager,
+        private readonly IconFactory $iconFactory,
     ) {
     }
 

@@ -20,9 +20,9 @@ namespace Waldhacker\Oauth2Client\Backend\SiteConfig;
 
 use Waldhacker\Oauth2Client\Service\Oauth2ProviderManager;
 
-readonly class ConfiguredFrontendProvidersItemsProcFunc
+class ConfiguredFrontendProvidersItemsProcFunc
 {
-    public function __construct(private Oauth2ProviderManager $oauth2ProviderManager)
+    public function __construct(private readonly Oauth2ProviderManager $oauth2ProviderManager)
     {
     }
 

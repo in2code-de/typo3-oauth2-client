@@ -21,9 +21,9 @@ namespace Waldhacker\Oauth2Client\Events\Listener;
 use TYPO3\CMS\FrontendLogin\Event\ModifyLoginFormViewEvent;
 use Waldhacker\Oauth2Client\Service\Oauth2ProviderManager;
 
-readonly class ModifyFrontendLoginFormViewListener
+class ModifyFrontendLoginFormViewListener
 {
-    public function __construct(private Oauth2ProviderManager $oauth2ProviderManager)
+    public function __construct(private readonly Oauth2ProviderManager $oauth2ProviderManager)
     {
     }
 

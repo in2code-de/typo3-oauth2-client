@@ -27,9 +27,9 @@ use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
 use TYPO3\CMS\Core\Security\RequestToken;
 use Waldhacker\Oauth2Client\Backend\LoginProvider\Oauth2LoginProvider;
 
-readonly class GenerateRequestTokenListener
+class GenerateRequestTokenListener
 {
-    public function __construct(protected Context $context)
+    public function __construct(protected readonly Context $context)
     {
     }
 

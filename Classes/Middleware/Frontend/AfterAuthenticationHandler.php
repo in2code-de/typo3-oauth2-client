@@ -39,16 +39,16 @@ use Waldhacker\Oauth2Client\Frontend\RequestStates;
 use Waldhacker\Oauth2Client\Service\SiteService;
 use Waldhacker\Oauth2Client\Session\SessionManager;
 
-readonly class AfterAuthenticationHandler implements MiddlewareInterface
+class AfterAuthenticationHandler implements MiddlewareInterface
 {
     public function __construct(
-        private RegistrationController $registrationController,
-        private SessionManager $sessionManager,
-        private SiteService $siteService,
-        private RequestStates $requestStates,
-        private RedirectRequestService $redirectRequestService,
-        private Context $context,
-        private ResponseFactoryInterface $responseFactory
+        private readonly RegistrationController $registrationController,
+        private readonly SessionManager $sessionManager,
+        private readonly SiteService $siteService,
+        private readonly RequestStates $requestStates,
+        private readonly RedirectRequestService $redirectRequestService,
+        private readonly Context $context,
+        private readonly ResponseFactoryInterface $responseFactory
     ) {
     }
 

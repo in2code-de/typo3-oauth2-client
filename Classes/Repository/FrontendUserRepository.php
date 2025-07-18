@@ -29,13 +29,13 @@ use TYPO3\CMS\Core\Database\ConnectionPool;
 use Waldhacker\Oauth2Client\Backend\DataHandling\DataHandlerHook;
 use Waldhacker\Oauth2Client\Database\Query\Restriction\Oauth2FeUserProviderConfigurationRestriction;
 
-readonly class FrontendUserRepository
+class FrontendUserRepository
 {
     private const OAUTH2_FE_CONFIG_TABLE = 'tx_oauth2_feuser_provider_configuration';
 
     public function __construct(
-        private Context $context,
-        private ConnectionPool $connectionPool
+        private readonly Context $context,
+        private readonly ConnectionPool $connectionPool
     ) {
     }
 

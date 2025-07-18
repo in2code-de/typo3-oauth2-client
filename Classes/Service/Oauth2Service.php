@@ -28,14 +28,14 @@ use TYPO3\CMS\Core\Log\LogManager;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotCreatedException;
 use Waldhacker\Oauth2Client\Session\SessionManager;
 
-readonly class Oauth2Service
+class Oauth2Service
 {
     private LoggerInterface $logger;
 
     public function __construct(
-        private Oauth2ProviderManager $oauth2ProviderManager,
-        private SessionManager $sessionManager,
-        private LogManager $logManager,
+        private readonly Oauth2ProviderManager $oauth2ProviderManager,
+        private readonly SessionManager $sessionManager,
+        private readonly LogManager $logManager,
     ) {
         $this->logger = $this->logManager->getLogger(__CLASS__);
     }

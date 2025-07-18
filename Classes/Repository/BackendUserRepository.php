@@ -29,14 +29,14 @@ use TYPO3\CMS\Core\DataHandling\DataHandler;
 use Waldhacker\Oauth2Client\Backend\DataHandling\DataHandlerHook;
 use Waldhacker\Oauth2Client\Database\Query\Restriction\Oauth2BeUserProviderConfigurationRestriction;
 
-readonly class BackendUserRepository
+class BackendUserRepository
 {
     private const OAUTH2_BE_CONFIG_TABLE = 'tx_oauth2_beuser_provider_configuration';
 
     public function __construct(
-        private DataHandler $dataHandler,
-        private Context $context,
-        private ConnectionPool $connectionPool
+        private readonly DataHandler $dataHandler,
+        private readonly Context $context,
+        private readonly ConnectionPool $connectionPool
     ) {
     }
 

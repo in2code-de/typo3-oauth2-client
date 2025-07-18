@@ -21,17 +21,17 @@ namespace Waldhacker\Oauth2Client\Domain\Model;
 use InvalidArgumentException;
 use League\OAuth2\Client\Provider\AbstractProvider;
 
-readonly class ProviderConfiguration
+class ProviderConfiguration
 {
     public function __construct(
-        private string $identifier,
-        private string $label,
-        private string $description,
-        private string $iconIdentifier,
-        private string $implementationClassName,
-        private array $scopes,
-        private array $options,
-        private array $collaborators
+        private readonly string $identifier,
+        private readonly string $label,
+        private readonly string $description,
+        private readonly string $iconIdentifier,
+        private readonly string $implementationClassName,
+        private readonly array $scopes,
+        private readonly array $options,
+        private readonly array $collaborators
     ) {
         if (
             !class_exists($this->implementationClassName)

@@ -24,11 +24,11 @@ use TYPO3\CMS\Core\Configuration\Features;
 use TYPO3\CMS\Core\Http\Uri;
 use Waldhacker\Oauth2Client\Service\SiteService;
 
-readonly class RedirectRequestService
+class RedirectRequestService
 {
     private const REDIRECT_URI_QUERY_NAME = 'after-oauth2-redirect-uri';
 
-    public function __construct(private SiteService $siteService, private Features $features)
+    public function __construct(private readonly SiteService $siteService, private readonly Features $features)
     {
     }
 
