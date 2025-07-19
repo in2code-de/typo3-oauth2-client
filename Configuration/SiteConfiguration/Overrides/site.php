@@ -37,7 +37,7 @@ defined('TYPO3') or die();
                 ['', '']
             ],
             'foreign_table' => 'pages',
-            'foreign_table_where' => ' AND module="fe_users" AND l10n_parent=0 ORDER BY pid, sorting',
+            'foreign_table_where' => ' AND module=\'fe_users\' AND l10n_parent=0 ORDER BY pid, sorting',
         ],
     ];
 
