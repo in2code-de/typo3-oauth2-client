@@ -107,6 +107,7 @@ class RegistrationController implements LoggerAwareInterface
 
     /**
      * @throws SessionNotCreatedException
+     * @throws AspectNotFoundException
      */
     private function verify(
         string $providerId,
@@ -146,10 +147,11 @@ class RegistrationController implements LoggerAwareInterface
             return $this->redirectWithWarning($warningRedirectUri, $request);
         }
         $remoteUser = $this->oauth2Service->getResourceOwner($provider, $accessToken);
+        $userId = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         if ($remoteUser instanceof ResourceOwnerInterface) {
             try {
-                $this->frontendUserRepository->persistIdentityForUser($providerId, (string)$remoteUser->getId());
+                $this->frontendUserRepository->persistIdentityForUser($providerId, (string)$remoteUser->getId(), $userId);
             } catch (Exception | AspectNotFoundException) {
                 return $this->redirectWithWarning($warningRedirectUri, $request);
             }
@@ -212,8 +214,8 @@ class RegistrationController implements LoggerAwareInterface
         $siteConfiguration = $site->getConfiguration();
         $languageConfiguration = $language->toArray();
         $configuredStoragePid = empty($languageConfiguration['oauth2_storage_pid'])
-                      ? ($siteConfiguration['oauth2_storage_pid'] ?? null)
-                      : $languageConfiguration['oauth2_storage_pid'];
+            ? ($siteConfiguration['oauth2_storage_pid'] ?? null)
+            : $languageConfiguration['oauth2_storage_pid'];
 
         $typo3UserStoragePid = $typo3User->user['pid'] ?? null;
         if ($typo3UserStoragePid === null) {

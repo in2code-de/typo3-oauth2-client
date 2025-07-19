@@ -22,8 +22,6 @@ use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
 use InvalidArgumentException;
 use TYPO3\CMS\Core\Authentication\BackendUserAuthentication;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use TYPO3\CMS\Core\DataHandling\DataHandler;
 use Waldhacker\Oauth2Client\Backend\DataHandling\DataHandlerHook;
@@ -35,7 +33,6 @@ class BackendUserRepository
 
     public function __construct(
         private readonly DataHandler $dataHandler,
-        private readonly Context $context,
         private readonly ConnectionPool $connectionPool
     ) {
     }
@@ -75,10 +72,9 @@ class BackendUserRepository
     }
 
     /**
-     * @throws AspectNotFoundException
      * @throws Exception
      */
-    public function persistIdentityForUser(string $provider, string $identifier): void
+    public function persistIdentityForUser(string $provider, string $identifier, int $userid): void
     {
         if (empty($provider)) {
             throw new InvalidArgumentException('"provider" must not be empty', 1642867950);
@@ -88,11 +84,10 @@ class BackendUserRepository
         }
 
         $cmd = [];
-        foreach ($this->getConfigurationsByIdentity($provider, $identifier) as $configuration) {
+        foreach ($this->getConfigurationsByIdentity($provider, $identifier, $userid) as $configuration) {
             $cmd[self::OAUTH2_BE_CONFIG_TABLE][(int)$configuration['uid']]['delete'] = 1;
         }
 
-        $userid = (int)$this->context->getPropertyFromAspect('backend.user', 'id');
         $data = [
             'be_users' => [
                 $userid => [
@@ -118,15 +113,13 @@ class BackendUserRepository
     }
 
     /**
-     * @throws AspectNotFoundException
      * @throws Exception
      */
-    public function getActiveProviders(): array
+    public function getActiveProviders(int $userid): array
     {
         $userWithEditRightsColumn = $GLOBALS['TCA'][
             self::OAUTH2_BE_CONFIG_TABLE
         ]['ctrl']['enablecolumns']['be_user'] ?? 'parentid';
-        $userid = (int)$this->context->getPropertyFromAspect('backend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable('be_users');
         $result = $qb->select('config.*')
@@ -148,15 +141,13 @@ class BackendUserRepository
     }
 
     /**
-     * @throws AspectNotFoundException
      * @throws Exception
      */
-    private function getConfigurationsByIdentity(string $provider, string $identifier): array
+    private function getConfigurationsByIdentity(string $provider, string $identifier, int $userid): array
     {
         $userWithEditRightsColumn = $GLOBALS['TCA'][
             self::OAUTH2_BE_CONFIG_TABLE
         ]['ctrl']['enablecolumns']['be_user'] ?? 'parentid';
-        $userid = (int)$this->context->getPropertyFromAspect('backend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_BE_CONFIG_TABLE);
         $qb->getRestrictions()->removeByType(Oauth2BeUserProviderConfigurationRestriction::class);

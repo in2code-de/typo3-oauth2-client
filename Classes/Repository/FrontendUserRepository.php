@@ -23,8 +23,6 @@ use Doctrine\DBAL\ArrayParameterType;
 use Doctrine\DBAL\Exception;
 use Doctrine\DBAL\ParameterType;
 use InvalidArgumentException;
-use TYPO3\CMS\Core\Context\Context;
-use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
 use TYPO3\CMS\Core\Database\ConnectionPool;
 use Waldhacker\Oauth2Client\Backend\DataHandling\DataHandlerHook;
 use Waldhacker\Oauth2Client\Database\Query\Restriction\Oauth2FeUserProviderConfigurationRestriction;
@@ -34,7 +32,6 @@ class FrontendUserRepository
     private const OAUTH2_FE_CONFIG_TABLE = 'tx_oauth2_feuser_provider_configuration';
 
     public function __construct(
-        private readonly Context $context,
         private readonly ConnectionPool $connectionPool
     ) {
     }
@@ -75,10 +72,9 @@ class FrontendUserRepository
     }
 
     /**
-     * @throws AspectNotFoundException
      * @throws Exception
      */
-    public function persistIdentityForUser(string $provider, string $identifier): void
+    public function persistIdentityForUser(string $provider, string $identifier, int $userid): void
     {
         if (empty($provider)) {
             throw new InvalidArgumentException('"provider" must not be empty', 1642867960);
@@ -91,11 +87,10 @@ class FrontendUserRepository
         $userWithEditRightsColumn = $GLOBALS['TCA'][
             self::OAUTH2_FE_CONFIG_TABLE
         ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
-        $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $activeConfigurationUids = array_map(
             'intval',
-            array_column($this->getConfigurationsByIdentity($provider, $identifier), 'uid')
+            array_column($this->getConfigurationsByIdentity($provider, $identifier, $userid), 'uid')
         );
         if (!empty($activeConfigurationUids)) {
             $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_FE_CONFIG_TABLE);
@@ -125,7 +120,7 @@ class FrontendUserRepository
             ->setValue('identifier', $identifier)
             ->executeStatement();
 
-        $activeProviders = $this->getActiveProviders();
+        $activeProviders = $this->getActiveProviders($userid);
         $qb = $this->connectionPool->getQueryBuilderForTable('fe_users');
         $qb->update('fe_users')
             ->set('tx_oauth2_client_configs', count($activeProviders))
@@ -134,21 +129,20 @@ class FrontendUserRepository
                     $qb->expr()->eq('uid', $qb->createNamedParameter($userid, ParameterType::INTEGER))
                 )
             )
-            ->executeQuery();
+            ->executeStatement();
     }
 
     /**
-     * @throws AspectNotFoundException
      * @throws Exception
      */
-    public function getActiveProviders(): array
+    public function getActiveProviders($userid): array
     {
         $userWithEditRightsColumn = $GLOBALS['TCA'][
             self::OAUTH2_FE_CONFIG_TABLE
         ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
-        $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable('fe_users');
+        $qb->getRestrictions()->removeByType(Oauth2FeUserProviderConfigurationRestriction::class);
         $result = $qb->select('config.*')
             ->from(self::OAUTH2_FE_CONFIG_TABLE, 'config')
             ->join('config', 'fe_users', 'fe_users', 'config.' . $userWithEditRightsColumn . '=fe_users.uid')
@@ -168,12 +162,11 @@ class FrontendUserRepository
     }
 
     /**
-     * @throws AspectNotFoundException
      * @throws Exception
      */
-    public function deactivateProviderByUid(int $providerUid): void
+    public function deactivateProviderByUid(int $providerUid, int $userid): void
     {
-        $activeProviders = $this->getActiveProviders();
+        $activeProviders = $this->getActiveProviders($userid);
         if (!in_array($providerUid, array_map('intval', array_column($activeProviders, 'uid')), true)) {
             return;
         }
@@ -181,7 +174,6 @@ class FrontendUserRepository
         $userWithEditRightsColumn = $GLOBALS['TCA'][
             self::OAUTH2_FE_CONFIG_TABLE
         ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
-        $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_FE_CONFIG_TABLE);
         $qb->delete(self::OAUTH2_FE_CONFIG_TABLE)
@@ -208,15 +200,13 @@ class FrontendUserRepository
     }
 
     /**
-     * @throws AspectNotFoundException
      * @throws Exception
      */
-    private function getConfigurationsByIdentity(string $provider, string $identifier): array
+    private function getConfigurationsByIdentity(string $provider, string $identifier, int $userid): array
     {
         $userWithEditRightsColumn = $GLOBALS['TCA'][
             self::OAUTH2_FE_CONFIG_TABLE
         ]['ctrl']['enablecolumns']['fe_user'] ?? 'parentid';
-        $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable(self::OAUTH2_FE_CONFIG_TABLE);
         $qb->getRestrictions()->removeByType(Oauth2FeUserProviderConfigurationRestriction::class);

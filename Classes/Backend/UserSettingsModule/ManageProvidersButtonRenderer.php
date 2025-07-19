@@ -21,6 +21,7 @@ namespace Waldhacker\Oauth2Client\Backend\UserSettingsModule;
 use Doctrine\DBAL\Exception;
 use TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
 use TYPO3\CMS\Core\Imaging\IconFactory;
 use TYPO3\CMS\Core\Imaging\Icon;
@@ -35,6 +36,7 @@ class ManageProvidersButtonRenderer
         private readonly BackendUserRepository $backendUserRepository,
         private readonly Oauth2ProviderManager $oauth2ProviderManager,
         private readonly IconFactory $iconFactory,
+        private readonly Context $context,
     ) {
     }
 
@@ -48,7 +50,8 @@ class ManageProvidersButtonRenderer
         $html = '';
         $languageFile = 'LLL:EXT:oauth2_client/Resources/Private/Language/locallang_be.xlf:';
         $lang = $this->getLanguageService();
-        $activeProviders = $this->backendUserRepository->getActiveProviders();
+        $userid = (int)$this->context->getPropertyFromAspect('backend.user', 'id');
+        $activeProviders = $this->backendUserRepository->getActiveProviders($userid);
         $hasActiveProviders = count($activeProviders) > 0;
         if ($hasActiveProviders) {
             $html .= ' <span class="badge badge-success">'
