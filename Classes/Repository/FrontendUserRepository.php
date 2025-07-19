@@ -134,7 +134,7 @@ class FrontendUserRepository
                     $qb->expr()->eq('uid', $qb->createNamedParameter($userid, ParameterType::INTEGER))
                 )
             )
-            ->executeQuery();
+            ->executeStatement();
     }
 
     /**
@@ -149,6 +149,7 @@ class FrontendUserRepository
         $userid = (int)$this->context->getPropertyFromAspect('frontend.user', 'id');
 
         $qb = $this->connectionPool->getQueryBuilderForTable('fe_users');
+        $qb->getRestrictions()->removeByType(Oauth2FeUserProviderConfigurationRestriction::class);
         $result = $qb->select('config.*')
             ->from(self::OAUTH2_FE_CONFIG_TABLE, 'config')
             ->join('config', 'fe_users', 'fe_users', 'config.' . $userWithEditRightsColumn . '=fe_users.uid')
