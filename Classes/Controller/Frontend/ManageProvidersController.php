@@ -23,6 +23,7 @@ use Psr\Http\Message\ResponseInterface;
 use Psr\Http\Message\ServerRequestInterface;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
+use TYPO3\CMS\Core\Context\Exception\AspectPropertyNotFoundException;
 use TYPO3\CMS\Core\Context\UserAspect;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotCreatedException;
 use TYPO3\CMS\Core\Site\Entity\Site;
@@ -48,6 +49,7 @@ class ManageProvidersController extends ActionController
 
     /**
      * @throws AspectNotFoundException
+     * @throws AspectPropertyNotFoundException
      * @throws SessionNotCreatedException
      * @throws Exception
      */
@@ -62,9 +64,10 @@ class ManageProvidersController extends ActionController
             $frontendUser->isLoggedIn()
             && $this->typo3UserIsWithinConfiguredStorage($serverRequest)
         ) {
+            $userid = (int)$frontendUser->get('id');
             $this->view->assignMultiple([
                 'providers' => $this->oauth2ProviderManager->getEnabledFrontendProviders(),
-                'activeProviders' => $this->frontendUserRepository->getActiveProviders()
+                'activeProviders' => $this->frontendUserRepository->getActiveProviders($userid)
             ]);
         }
 
@@ -88,6 +91,7 @@ class ManageProvidersController extends ActionController
 
     /**
      * @throws AspectNotFoundException
+     * @throws AspectPropertyNotFoundException
      * @throws Exception
      */
     public function deactivateAction(int $providerId): ResponseInterface
@@ -96,7 +100,8 @@ class ManageProvidersController extends ActionController
         $frontendUser = $this->context->getAspect('frontend.user');
 
         if ($frontendUser->isLoggedIn()) {
-            $this->frontendUserRepository->deactivateProviderByUid($providerId);
+            $userid = (int)$frontendUser->get('id');
+            $this->frontendUserRepository->deactivateProviderByUid($providerId, $userid);
         }
 
         return $this->redirect('list');

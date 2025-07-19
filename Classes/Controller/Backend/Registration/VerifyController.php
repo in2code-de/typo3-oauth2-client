@@ -27,6 +27,7 @@ use TYPO3\CMS\Backend\Routing\Exception\RouteNotFoundException;
 use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
+use TYPO3\CMS\Core\Context\Exception\AspectPropertyNotFoundException;
 use TYPO3\CMS\Core\Context\UserAspect;
 use TYPO3\CMS\Core\Session\Backend\Exception\SessionNotCreatedException;
 use TYPO3\CMS\Core\Type\ContextualFeedbackSeverity;
@@ -51,6 +52,7 @@ class VerifyController extends AbstractBackendController
 
     /**
      * @throws AspectNotFoundException
+     * @throws AspectPropertyNotFoundException
      * @throws SessionNotCreatedException
      * @throws RouteNotFoundException
      */
@@ -102,10 +104,11 @@ class VerifyController extends AbstractBackendController
             return $this->redirectWithWarning($request);
         }
         $remoteUser = $this->oauth2Service->getResourceOwner($provider, $accessToken);
+        $userid = (int)$backendUser->get('id');
 
         if ($remoteUser instanceof ResourceOwnerInterface) {
             try {
-                $this->backendUserRepository->persistIdentityForUser($providerId, (string)$remoteUser->getId());
+                $this->backendUserRepository->persistIdentityForUser($providerId, (string)$remoteUser->getId(), $userid);
             } catch (Exception) {
                 return $this->redirectWithWarning($request);
             }

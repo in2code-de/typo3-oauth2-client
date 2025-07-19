@@ -26,6 +26,7 @@ use TYPO3\CMS\Backend\Routing\UriBuilder;
 use TYPO3\CMS\Backend\Template\Components\ButtonBar;
 use TYPO3\CMS\Backend\Template\ModuleTemplate;
 use TYPO3\CMS\Backend\Template\ModuleTemplateFactory;
+use TYPO3\CMS\Core\Context\Context;
 use TYPO3\CMS\Core\Context\Exception\AspectNotFoundException;
 use TYPO3\CMS\Core\Imaging\Icon;
 use TYPO3\CMS\Core\Imaging\IconFactory;
@@ -41,7 +42,8 @@ class ManageProvidersController extends AbstractBackendController
         private readonly BackendUserRepository $backendUserRepository,
         private readonly UriBuilder $uriBuilder,
         private readonly IconFactory $iconFactory,
-        private readonly ModuleTemplateFactory $moduleTemplateFactory
+        private readonly ModuleTemplateFactory $moduleTemplateFactory,
+        private readonly Context $context,
     ) {
     }
 
@@ -54,9 +56,10 @@ class ManageProvidersController extends AbstractBackendController
     {
         $moduleTemplate = $this->moduleTemplateFactory->create($request);
         $this->addButtons($request, $moduleTemplate);
+        $userid = (int)$this->context->getPropertyFromAspect('backend.user', 'id');
         $moduleTemplate->assignMultiple([
             'providers' => $this->oauth2ProviderManager->getConfiguredBackendProviders(),
-            'activeProviders' => $this->backendUserRepository->getActiveProviders()
+            'activeProviders' => $this->backendUserRepository->getActiveProviders($userid)
         ]);
         return $moduleTemplate->renderResponse('Backend/ManageProviders');
     }
