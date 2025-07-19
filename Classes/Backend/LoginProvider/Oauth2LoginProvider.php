@@ -27,13 +27,13 @@ use TYPO3\CMS\Core\Page\PageRenderer;
 use TYPO3\CMS\Fluid\View\StandaloneView;
 use Waldhacker\Oauth2Client\Service\Oauth2ProviderManager;
 
-readonly class Oauth2LoginProvider implements LoginProviderInterface
+class Oauth2LoginProvider implements LoginProviderInterface
 {
     public const PROVIDER_ID = '1616569531';
 
     public function __construct(
-        private Oauth2ProviderManager $oauth2ProviderManager,
-        private ExtensionConfiguration $extensionConfiguration
+        private readonly Oauth2ProviderManager $oauth2ProviderManager,
+        private readonly ExtensionConfiguration $extensionConfiguration
     ) {
     }
 

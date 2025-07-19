@@ -28,13 +28,13 @@ use Waldhacker\Oauth2Client\Frontend\RequestStates;
 use Waldhacker\Oauth2Client\Service\SiteService;
 use Waldhacker\Oauth2Client\Session\SessionManager;
 
-readonly class BeforeAuthenticationHandler implements MiddlewareInterface
+class BeforeAuthenticationHandler implements MiddlewareInterface
 {
     public function __construct(
-        private SessionManager $sessionManager,
-        private SiteService $siteService,
-        private RequestStates $requestStates,
-        private RedirectRequestService $redirectRequestService
+        private readonly SessionManager $sessionManager,
+        private readonly SiteService $siteService,
+        private readonly RequestStates $requestStates,
+        private readonly RedirectRequestService $redirectRequestService
     ) {
     }
 
