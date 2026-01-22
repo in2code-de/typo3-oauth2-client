@@ -85,7 +85,7 @@ class SiteService
         /** @var Site|null $site */
         $site = $this->getSite($request);
         $language = $this->getLanguage($request);
-        if ($site === null || $language === null) {
+        if (!$site instanceof Site || $language === null) {
             return self::CALLBACK_SLUG;
         }
 

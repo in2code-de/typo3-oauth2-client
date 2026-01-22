@@ -1,3 +1,11 @@
+> **📦 Migration Notice**  
+> This package is a fork from https://gitlab.com/co-stack.com/co-stack.com/typo3-extensions/typo3-oauth2-client
+> It is now maintained by [in2code GmbH](https://www.in2code.de).
+>
+> - **Old location:** `gitlab.com/co-stack.com/co-stack.com/typo3-extensions/typo3-oauth2-client`
+> - **New location:** `github.com/in2code-de/typo3-oauth2-client`
+> - **Composer name:** `co-stack/typo3-oauth2-client` (unchanged)
+
 # TYPO3 OAuth2 login client (backend and frontend)
 
 Allow your frontend and backend users to add login possibilities via any OAuth2 provider. Popular examples are Github or Gitlab, Google, Facebook or LinkedIn or classically self-hosted solutions like Keycloak.
